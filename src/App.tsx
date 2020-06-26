@@ -1,26 +1,39 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import {useQuery, useMutation, queryCache, QueryResult} from 'react-query'
 
-function App() {
+export default function App() {
+  const [mutate, {status}] = useSomeMutation()
+  const loading = status === "loading"
+console.log("mother fucker")
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <button type="button" disabled={loading} onClick={() => mutate()}>
+        {loading ? "loading..." : "Submit"}
+      </button>
     </div>
   );
 }
 
-export default App;
+
+export function useSomeMutation() {
+  return useMutation<void, undefined>(async () => {
+    await delay()
+  }, {
+    onSuccess: async () => {
+      console.log("onSuccess start")
+      queryCache.setQueryData("notInstantiated", "hello")
+      queryCache.setQueryData("notInstantiated2", "hello")
+      const a = queryCache.refetchQueries("notInstantiated", {force:true})
+      const b = queryCache.refetchQueries("notInstantiated2", {force:true})
+      console.log("promises are never resolved", a, b)
+      await Promise.all([a,b])
+      // This never reaches
+      console.log("onSuccess end")
+    }
+  })
+}
+
+export function delay(time: number = 1000): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, time))
+}
